@@ -1,0 +1,215 @@
+class Token {
+    private String token;
+    private String type;
+    public static String KEYWORD = "keyword";
+    public static String OPERATOR = "operator";
+    public static String INTEGER = "integer";
+    public static String STRING = "string";
+    public static String BOOLEAN = "boolean";
+    public static String TYPEID = "typeid";
+    public static String OBJECTID = "objectid";
+    public static String ERROR = "error";
+    public static String GROUP = "group";
+    public static String COMMENT = "comment";
+    public static String SCAPED = "scaped";
+
+    public Token(String token, String type) {
+        this.token = token;
+        this.type = type;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+}
+%%
+
+CASE = [Cc][Aa][Ss][Ee]
+CLASS = [Cc][Ll][Aa][Ss][Ss]
+ELSE = [Ee][Ll][Ss][Ee]
+ESAC = [Ee][Ss][Aa][Cc]
+FI = [Ff][Ii]
+IF = [Ii][Ff]
+IN = [Ii][Nn]
+INHERITS = [Ii][Nn][Hh][Ee][Rr][Ii][Tt][Ss]
+ISVOID = [Ii][Ss][Vv][Oo][Ii][Dd]
+LET = [Ll][Ee][Tt]
+LOOP = [Ll][Oo][Oo][Pp]
+NEW = [Nn][Ee][Ww]
+NOT = [Nn][Oo][Tt]
+OF = [Oo][Ff]
+POOL = [Pp][Oo][Oo][Ll]
+THEN = [Tt][Hh][Ee][Nn]
+WHILE = [wW][Hh][Ii][Ll][Ee]
+
+ASSIGN = <-
+DARROW = =>
+
+BACKSPACE = \\b
+CARRIAGE = \\r
+FORMFEED = \\f
+NEWLINE = \\n
+TAB = \\t
+
+WHITESPACE = ({BACKSPACE}|{CARRIAGE}|{FORMFEED}|{NEWLINE}|{TAB})
+
+CHARACTER = ([^\n\r\"\\])+
+SCAPEDCHARACTER = (\\([\\\"]|[^brfnt0]))*
+
+CHARCOMMENTS = ([^\*\)]|\*[^\)]|[^\*]\))*
+ONELINECOMMENTS = ([^\n])*
+
+INT_CONST = [0-9]+
+BOOL_CONST = (t[Rr][Uu][Ee])|(f[Aa][Ll][Ss][Ee])
+
+TYPEID = [A-Z]([a-zA-Z0-9_]*)
+OBJECTID = [a-z]([a-zA-Z0-9_]*)
+
+LE = <DUMMY>
+LET_STMT = <DUMMY>
+
+NONNEWLINE_WHITE_SPACE_CHAR=[\ \t\b\012]
+
+%line
+%type Token
+%state DUMMY
+%state READCHAR
+%state READCOMMENT
+%state READONELINECOMMENT
+
+%{
+      private String str_buffer = "";
+%} 
+
+%eofval{
+    return null;
+%eofval}
+
+%%
+
+<YYINITIAL> \+ { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> - { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> = { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> / { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> < { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> \. { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> ~ { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> , { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> ; { return new Token(yytext(), Token.GROUP); }
+<YYINITIAL> : { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> \) { return new Token(yytext(), Token.GROUP); }
+<YYINITIAL> @ { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> \{ { return new Token(yytext(), Token.GROUP); }
+<YYINITIAL> \} { return new Token(yytext(), Token.GROUP); }
+<YYINITIAL> \* { return new Token(yytext(), Token.OPERATOR); }
+<YYINITIAL> \( { return new Token(yytext(), Token.GROUP); }
+
+<READCOMMENT> {CHARCOMMENTS} {
+    str_buffer += yytext();
+}
+
+<READCOMMENT> \*\) {
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.COMMENT);
+}
+
+<READCOMMENT> <<EOF>> {
+    System.err.println("Error at line " + (yyline + 1));
+    System.err.println("Can not leave comment open");
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.ERROR);
+}
+
+<READONELINECOMMENT> {ONELINECOMMENTS} {
+    str_buffer += yytext();
+}
+
+<READONELINECOMMENT> <<EOF>>|\n {
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.COMMENT);
+}
+
+<READCHAR> {CHARACTER}|{WHITESPACE} {
+    str_buffer += yytext();
+}
+
+<READCHAR> {SCAPEDCHARACTER} {
+    str_buffer += yytext().replace("\\", "");
+}
+
+<READCHAR> <<EOF>> {
+    System.err.println("Error at line " + (yyline + 1));
+    System.err.println("Can not leave quotes open");
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.ERROR);
+}
+<READCHAR> \n {
+    System.err.println("Error at line " + (yyline + 1));
+    System.err.println("Can not enter a new line without scape character");
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.ERROR);
+}
+<READCHAR> \" {
+    yybegin(YYINITIAL);
+    return new Token(str_buffer, Token.STRING);
+}
+
+<YYINITIAL> {NONNEWLINE_WHITE_SPACE_CHAR}+ { }
+
+<YYINITIAL> \" {
+    str_buffer = "";
+    yybegin(READCHAR);
+}
+
+<YYINITIAL> \(\* {
+    str_buffer = "";
+    yybegin(READCOMMENT);
+}
+
+<YYINITIAL> -- {
+    str_buffer = "";
+    yybegin(READONELINECOMMENT);
+}
+
+{CASE} { return new Token("case", Token.KEYWORD);}
+{CLASS} { return new Token("class", Token.KEYWORD);}
+{ELSE} { return new Token("else", Token.KEYWORD);}
+{ESAC} { return new Token("esac", Token.KEYWORD);}
+{FI} { return new Token("fi", Token.KEYWORD);}
+{IF} { return new Token("if", Token.KEYWORD);}
+{IN} { return new Token("in", Token.KEYWORD);}
+{INHERITS} { return new Token("inherits", Token.KEYWORD);}
+{ISVOID} { return new Token("isvoid", Token.OPERATOR);}
+{LET} { return new Token("let", Token.KEYWORD);}
+{LOOP} { return new Token("loop", Token.KEYWORD);}
+{NEW} { return new Token("new", Token.KEYWORD);}
+{NOT} { return new Token("not", Token.OPERATOR);}
+{OF} { return new Token("of", Token.KEYWORD);}
+{POOL} { return new Token("pool", Token.KEYWORD);}
+{THEN} { return new Token("then", Token.KEYWORD);}
+{WHILE} { return new Token("while", Token.KEYWORD);}
+
+{ASSIGN}        { return new Token(yytext(), Token.OPERATOR);}
+{DARROW}        { return new Token(yytext(), Token.OPERATOR);}
+
+{INT_CONST}     { return new Token(yytext(), Token.INTEGER);}
+{BOOL_CONST}    { return new Token(yytext(), Token.BOOLEAN);}
+
+{TYPEID}        { return new Token(yytext(), Token.TYPEID);}
+{OBJECTID}      { return new Token(yytext(), Token.OBJECTID);}
+
+[^]         { System.err.println("Invalid sequence at line " + (yyline + 1) + " : "+ yytext()); return new Token(yytext(), Token.ERROR);}
+
+<DUMMY>.        { return null; }

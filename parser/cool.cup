@@ -1,0 +1,459 @@
+/*
+ *  cool.cup
+ *              Parser definition for the COOL language.
+ *
+ */
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import java.util.List;
+
+/* Stuff enclosed in {: :} is copied verbatim to the class containing
+all parser actions.  All the extra variables/functions you want to use
+in the semantic actions should go here.  Don't remove or modify anything
+that was there initially.  */
+
+action code {:
+    List<Token>tokenList = new ArrayList<Token>();
+
+    public int getCurrentLineNumber() {
+        return ((CoolScanner)parser.getScanner()).getCurrentLineNumber();
+    }
+
+    public String getCurrentFileName() {
+        return ((CoolScanner)parser.getScanner()).getCurrentFileName();
+    }
+
+:}
+
+
+/************************************************************************/
+/*                DONT CHANGE ANYTHING IN THIS SECTION                  */
+
+parser code {:
+    int omerrs = 0;
+
+    public void syntax_error(java_cup.runtime.Symbol cur_token) {
+       Token token = ((Token)cur_token.value);
+       String filename = action_obj.getCurrentFileName();
+       int lineNumber = action_obj.getCurrentLineNumber();
+       System.err.println(filename + ": line (" + lineNumber + ") >> Error: Unexpected symbol " +  token.getToken());
+    omerrs++;
+    if (omerrs>50) {
+       System.err.println("More than 50 errors");
+       System.exit(1);
+    }
+    }
+
+    public void unrecovered_syntax_error(java_cup.runtime.Symbol cur_token) {
+       Token token = ((Token)cur_token.value);
+       String filename = action_obj.getCurrentFileName();
+       int lineNumber = action_obj.getCurrentLineNumber();
+       System.err.println(filename + ": line (" + lineNumber + ") >> Error: Unrecovered error with token  " +  token.getToken());
+    }
+:}
+
+/* Declare the terminals; a few have types for associated lexemes.  The
+°token ERROR is never used in the parser; thus, it is a parse error when
+the lexer returns it.  */
+
+terminal CLASS, ELSE, FI, IF, IN, INHERITS, LET, LET_STMT, LOOP, POOL, THEN, WHILE;
+terminal CASE, ESAC, OF, DARROW, NEW, ISVOID;
+terminal ASSIGN, NOT, LE, ERROR;
+terminal PLUS, DIV, MULT, EQ, LT, DOT, NEG, COMMA, SEMI, COLON;
+terminal LPAREN, RPAREN, AT, LBRACE, RBRACE;
+terminal Token INT_CONST;
+terminal Token BOOL_CONST;
+terminal Token MINUS;
+terminal Token STR_CONST;
+terminal Token TYPEID, OBJECTID;
+
+/**************************************************************************/
+/*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
+
+   /* Complete the nonterminal list below, giving a type for the semantic
+      value of each non terminal. (See the CUP documentation for details. */
+
+non terminal Program prog;
+non terminal Expression expr;
+non terminal Expression formal;
+non terminal Expression class;
+non terminal Expression feature;
+non terminal Expression case_expr;
+non terminal Expression let_expr;
+non terminal Expression statement_expr;
+non terminal Expression func_expr;
+non terminal Expression param_expr;
+non terminal Expression assign_expr;
+non terminal Expression feat_expr;
+non terminal Expression formal_expr;
+non terminal Expression ref_expr;
+non terminal Expression class_expr;
+
+precedence left DOT;
+precedence left AT;
+precedence left NEG;
+precedence left ISVOID;
+precedence left MULT, DIV;
+precedence left PLUS, MINUS;
+precedence left LT, EQ;
+precedence left NOT;
+precedence left ASSIGN;
+/* Precedence declarations go here. */
+
+prog    ::= class_expr:c
+        {: 
+           Program p = new Program();
+           p.setExpression(c);
+           p.setTokenList(tokenList);
+           RESULT = p;
+        :}
+        ;
+
+class   ::= CLASS TYPEID INHERITS TYPEID LBRACE feat_expr RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | CLASS TYPEID LBRACE feat_expr RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | CLASS TYPEID INHERITS TYPEID LBRACE RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | CLASS TYPEID LBRACE RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+class_expr ::= class SEMI
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | class SEMI class_expr
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+feature ::= OBJECTID LPAREN formal_expr RPAREN COLON TYPEID LBRACE expr RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | OBJECTID LPAREN RPAREN COLON TYPEID LBRACE expr RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+
+        | formal:f ASSIGN expr:e
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | formal:f
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+feat_expr ::= feature SEMI feat_expr
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | feature SEMI
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+formal  ::= OBJECTID COLON TYPEID
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+formal_expr ::= formal:f
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | formal:f COMMA formal_expr
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+case_expr  ::= formal:f DARROW expr SEMI
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | formal:f DARROW expr SEMI case_expr
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+assign_expr  ::= formal:f ASSIGN expr:e1
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | formal:f
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+let_expr  ::= assign_expr:a
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | assign_expr COMMA let_expr:l
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+statement_expr  ::= expr:e SEMI
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | expr:e SEMI statement_expr:b
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+ref_expr    ::= expr:e1 AT TYPEID DOT OBJECTID
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+         | expr:e1 DOT OBJECTID
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+
+func_expr   ::= LPAREN param_expr:b RPAREN
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | LPAREN  RPAREN
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+param_expr  ::= expr:e
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | expr:e COMMA param_expr:b
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        ;
+
+expr    ::= OBJECTID ASSIGN expr:e
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | ref_expr func_expr:f
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | OBJECTID func_expr:b
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | WHILE expr:e1 LOOP expr:e2 POOL
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | LBRACE statement_expr:b RBRACE
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | LET let_expr:l IN expr:e1
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | CASE expr:e OF case_expr:ce ESAC
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | NEW TYPEID
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | ISVOID expr:e
+            {:
+            Expression exp = new Expression();
+            exp.setString("TBD");
+            RESULT = exp;
+            :}
+        | expr:e1 MINUS:m expr:e2
+            {: 
+            tokenList.add(m);
+            Expression exp = new Expression();
+            //exp.setInteger(e1.getInteger() - e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 PLUS expr:e2
+            {: 
+            Expression exp = new Expression();
+            //exp.setInteger(e1.getInteger() + e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 MULT expr:e2
+            {: 
+            Expression exp = new Expression();
+            //exp.setInteger(e1.getInteger() * e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 DIV expr:e2
+            {: 
+            Expression exp = new Expression();
+            //exp.setInteger(e1.getInteger() / e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 LT expr:e2
+            {:
+            Expression exp = new Expression();
+            //exp.setBoolean(e1.getInteger() < e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 LT EQ expr:e2
+            {:
+            Expression exp = new Expression();
+            //exp.setBoolean(e1.getInteger() <= e2.getInteger());
+            RESULT = exp;
+            :}
+        | expr:e1 EQ expr:e2
+            {:
+            Expression exp = new Expression();
+            //exp.setBoolean(e1.getInteger() == e2.getInteger());
+            RESULT = exp;
+            :}
+        | NEG expr:e
+            {:
+            //e.setBoolean(!e.getBoolean());
+            RESULT = e;
+            :}
+        | NOT expr:e
+            {:
+            //e.setBoolean(!e.getBoolean());
+            RESULT = e;
+            :}
+        | LPAREN expr:e RPAREN
+            {:
+            RESULT = e;
+            :}
+        | INT_CONST:int1
+            {:
+            tokenList.add(int1);
+            Expression exp = new Expression();
+            exp.setInteger(int1.parseInt());
+            RESULT = exp;
+            :}
+        | STR_CONST:s
+            {:
+            Expression exp = new Expression();
+            tokenList.add(s);
+            exp.setString(s.parseStr());
+            RESULT = exp;
+            :}
+        | BOOL_CONST:b
+            {: 
+            tokenList.add(b);
+            Expression exp = new Expression();
+            exp.setBoolean(b.parseBoolean());
+            RESULT = exp;
+            :}
+        | OBJECTID:o
+            {:
+            Expression exp = new Expression();
+            exp.setCoolId(o.parseCoolId());
+            RESULT = exp;
+            :}
+        ;
